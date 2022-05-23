@@ -46,10 +46,7 @@ const server = http.createServer((req, res) => {
     });
     res.statusCode = 201;
     res.end("Post succeeded");
-  } else if (
-    items[1] === "posts" &&
-    (req.method === "PATCH" || req.method === "PUT")
-  ) {
+  } else if (items[1] === "posts" && req.method === "PATCH") {
     if (parseInt(items[2]) <= tempTodos.Todos.length) {
       const patchId = parseInt(items[2] - 1);
       const post = tempTodos.Todos[patchId];
@@ -70,6 +67,31 @@ const server = http.createServer((req, res) => {
         }`
       );
     }
+  } else if (items[1] === "posts" && req.method === "PUT") {
+    req.on("data", (chunk) => {
+      if (parseInt(items[2]) <= tempTodos.Todos.length) {
+        const newTodo = JSON.parse(chunk.toString());
+        const patchId = parseInt(items[2] - 1);
+        const post = tempTodos.Todos[patchId];
+        post.complete = newTodo.complete;
+        post.action = newTodo.action;
+        fs.writeFile("./todos.json", JSON.stringify(tempTodos), (error) => {
+          if (error) console.log(error);
+          console.log("Database updated.");
+        });
+        res.statusCode = 201;
+        res.end(`${req.method} succeeded.`);
+      } else {
+        res.statusCode = 404;
+        res.end(
+          `Cant ${req.method} post${
+            items[2] === ""
+              ? ". Don´t forget to add the id of the post in the url e.g http://localhost:5000/posts/(id here)/"
+              : ` ${items[2]} It dosn´t exist.`
+          }`
+        );
+      }
+    });
   } else if (req.method === "DELETE" && items[1] === "posts") {
     if (parseInt(items[2]) <= tempTodos.Todos.length) {
       let number = 1;
