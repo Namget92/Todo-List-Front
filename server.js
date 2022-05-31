@@ -48,15 +48,37 @@ const server = http.createServer((req, res) => {
     res.end("Post succeeded");
   } else if (items[1] === "posts" && req.method === "PATCH") {
     if (parseInt(items[2]) <= tempTodos.Todos.length) {
-      const patchId = parseInt(items[2] - 1);
-      const post = tempTodos.Todos[patchId];
-      post.complete = !post.complete;
-      fs.writeFile("./todos.json", JSON.stringify(tempTodos), (error) => {
-        if (error) console.log(error);
-        console.log("Database updated.");
+      req.on("data", (chunk) => {
+        const newTodo = JSON.parse(chunk.toString());
+        console.log(newTodo);
+        const patchId = parseInt(items[2] - 1);
+        const post = tempTodos.Todos[patchId];
+        if (newTodo.action) {
+          post.action = newTodo.action;
+          fs.writeFile("./todos.json", JSON.stringify(tempTodos), (error) => {
+            if (error) console.log(error);
+            console.log("Database updated.");
+          });
+          res.statusCode = 201;
+          res.end(`${req.method} succeeded.`);
+        } else if (newTodo.complete) {
+          post.complete = newTodo.complete;
+          fs.writeFile("./todos.json", JSON.stringify(tempTodos), (error) => {
+            if (error) console.log(error);
+            console.log("Database updated.");
+          });
+          res.statusCode = 201;
+          res.end(`${req.method} succeeded.`);
+        } else {
+          post.complete = !post.complete;
+          fs.writeFile("./todos.json", JSON.stringify(tempTodos), (error) => {
+            if (error) console.log(error);
+            console.log("Database updated.");
+          });
+          res.statusCode = 201;
+          res.end(`${req.method} succeeded.`);
+        }
       });
-      res.statusCode = 201;
-      res.end(`${req.method} succeeded.`);
     } else {
       res.statusCode = 404;
       res.end(
